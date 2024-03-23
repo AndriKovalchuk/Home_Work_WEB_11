@@ -1,4 +1,7 @@
 from datetime import date
+from typing import Optional
+
+from fastapi import HTTPException, status
 from pydantic import BaseModel, Field, EmailStr, field_validator
 import re
 
@@ -9,7 +12,7 @@ class ContactModel(BaseModel):
     email: EmailStr
     contact_number: str
     birth_date: date
-    additional_information: str = Field(max_length=250)
+    additional_information: str = Optional[str]
 
     @field_validator('contact_number')  # noqa
     @classmethod
@@ -23,14 +26,15 @@ class ContactModel(BaseModel):
             123.456.7890
             +12 (345) 678-9012
             """
-            raise ValueError('Invalid contact number')
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Invalid contact number")
         return value
 
     @field_validator("birth_date")  # noqa
     @classmethod
     def validate_birth_date(cls, value: date) -> date:
         if value > date.today():
-            raise ValueError("Invalid birth date. Birth date can't be in the future.")
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                detail="Invalid birth date. Birth date can't be in the future.")
         return value
 
 
